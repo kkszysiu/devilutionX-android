@@ -28,7 +28,10 @@ find_library(
         log
 )
 
-include_directories(include)
+include_directories(
+        include
+        ${CMAKE_CURRENT_SOURCE_DIR}/../SDL2/include
+)
 
 add_definitions(-DGL_GLEXT_PROTOTYPES)
 

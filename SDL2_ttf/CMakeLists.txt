@@ -35,6 +35,7 @@ find_library(
 
 include_directories(
         include
+        ${CMAKE_CURRENT_SOURCE_DIR}/../SDL2/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../freetype/include
 )
 

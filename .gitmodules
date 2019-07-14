@@ -1,3 +1,4 @@
 [submodule "devilutionX"]
 	path = devilutionX
 	url = git@github.com:diasurgical/devilutionX.git
+        branch = android_port

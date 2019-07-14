@@ -73,10 +73,10 @@ public class SDLActivity extends Activity {
         return new String[] {
             "SDL2",
             // "SDL2_image",
-            // "SDL2_mixer",
+            "SDL2_mixer",
             // "SDL2_net",
-            // "SDL2_ttf",
-            "main-lib"
+            "SDL2_ttf",
+            "devilutionx"
         };
     }
 
@@ -126,6 +126,7 @@ public class SDLActivity extends Activity {
         SDLActivity.initialize();
         // So we can call stuff from static callbacks
         mSingleton = this;
+        Log.v(TAG, "onCreate after initialize(): " + mSingleton);
 
         // Load shared libraries
         String errorMsgBrokenLib = "";
@@ -165,6 +166,7 @@ public class SDLActivity extends Activity {
 
         // Set up the surface
         mSurface = new SDLSurface(getApplication());
+        Log.v(TAG, "onCreate mSurface initialised(): " + mSurface);
 
         if(Build.VERSION.SDK_INT >= 12) {
             mJoystickHandler = new SDLJoystickHandler_API12();
@@ -177,6 +179,7 @@ public class SDLActivity extends Activity {
         mLayout.addView(mSurface);
 
         setContentView(mLayout);
+        Log.v(TAG, "onCreate mLayout initialised(): " + mLayout);
         
         // Get filename from "Open with" of another application
         Intent intent = getIntent();
@@ -188,6 +191,7 @@ public class SDLActivity extends Activity {
                 SDLActivity.onNativeDropFile(filename);
             }
         }
+        Log.v(TAG, "onCreate done(): " + mSingleton);
     }
 
     // Events

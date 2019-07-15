@@ -1,26 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="rocks.georgik.sdlapp"
+    package="rocks.georgik.devilutionx"
     android:versionCode="1"
-    android:versionName="1.0">
+    android:versionName="1.0"
+    android:installLocation="auto">
+
+    <!-- Touchscreen support -->
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+
+    <!-- Game controller support -->
+    <uses-feature
+        android:name="android.hardware.gamepad"
+        android:required="false" />
+
+    <!-- External mouse input events -->
+    <uses-feature
+        android:name="android.hardware.type.pc"
+        android:required="false" />
 
     <uses-permission
-        android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="18" />
+        android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission
-        android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="18" />
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:allowBackup="false"
         android:label="@string/app_name"
-        android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+        android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+        android:hardwareAccelerated="true">
         <activity
-            android:name="rocks.georgik.sdlapp.SDLActivity"
+            android:name="org.kkszysiu.devilutionx.DevilutionXSDLActivity"
             android:configChanges="keyboardHidden|orientation"
+            android:screenOrientation="landscape"
             android:label="@string/app_name">
         </activity>
         <activity
-            android:name="rocks.georgik.sdlapp.MainActivity"
+            android:name="org.kkszysiu.devilutionx.MainActivity"
             android:label="@string/title_activity_main"
             android:configChanges="orientation">
             <intent-filter>

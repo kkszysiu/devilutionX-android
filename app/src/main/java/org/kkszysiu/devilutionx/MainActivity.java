@@ -1,4 +1,4 @@
-package rocks.georgik.sdlapp;
+package org.kkszysiu.devilutionx;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -14,7 +14,7 @@ public class MainActivity extends Activity {
     }
 
     public void startSDLActivity(View view) {
-        Intent intent = new Intent(this, SDLActivity.class);
+        Intent intent = new Intent(this, DevilutionXSDLActivity.class);
         startActivity(intent);
     }
 

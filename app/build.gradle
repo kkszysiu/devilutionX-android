@@ -25,7 +25,7 @@ apply plugin: 'kotlin-android-extensions'
         compileSdkVersion = gradle.sdkVersion
 
         defaultConfig {
-            applicationId = 'rocks.georgik.sdlapp'
+            applicationId = 'org.diasurgical.devilutionx'
             minSdkVersion gradle.minSdkVersion
             targetSdkVersion gradle.targetSdkVersion
         }

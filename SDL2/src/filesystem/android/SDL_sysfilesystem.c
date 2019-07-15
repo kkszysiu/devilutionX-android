@@ -46,7 +46,7 @@ char *
 SDL_GetPrefPath(const char *org, const char *app)
 {
     //const char *path = SDL_AndroidGetInternalStoragePath();
-    const char *path ="/storage/emulated/0/Android/data/org.kkszysiu.devilutionx/";
+    const char *path ="/sdcard/Android/data/org.diasurgical.devilutionx/";
     __android_log_print(ANDROID_LOG_INFO, "devilutionX", "SDL_GetPrefPath path: %s", path);
     if (path) {
         size_t pathlen = SDL_strlen(path)+2;

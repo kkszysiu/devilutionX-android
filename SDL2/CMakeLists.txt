@@ -59,10 +59,10 @@ add_library( # Sets the name of the library.
         src/render/software/SDL_rotate.c
         src/render/software/SDL_drawpoint.c
         src/render/software/SDL_render_sw.c
+        src/video/SDL_yuv.c
         src/render/SDL_yuv_sw.c
         src/render/SDL_d3dmath.c
         src/render/psp/SDL_render_psp.c
-        src/render/SDL_yuv_mmx.c
         src/audio/SDL_mixer.c
         src/audio/SDL_audiocvt.c
         src/audio/SDL_wave.c
@@ -73,6 +73,7 @@ add_library( # Sets the name of the library.
         src/audio/SDL_audiotypecvt.c
         src/audio/SDL_audio.c
         src/core/android/SDL_android.c
+        src/haptic/android/SDL_syshaptic.c
         src/cpuinfo/SDL_cpuinfo.c
         src/file/SDL_rwops.c
         src/timer/unix/SDL_systimer.c
@@ -92,6 +93,7 @@ add_library( # Sets the name of the library.
         src/test/SDL_test_common.c
         src/test/SDL_test_font.c
         src/test/SDL_test_imageBlitBlend.c
+        src/test/SDL_test_memory.c
         src/events/SDL_dropevents.c
         src/events/SDL_mouse.c
         src/events/SDL_clipboardevents.c
@@ -101,6 +103,7 @@ add_library( # Sets the name of the library.
         src/events/SDL_quit.c
         src/events/SDL_events.c
         src/events/SDL_touch.c
+        src/events/SDL_displayevents.c
         src/thread/SDL_thread.c
         src/thread/pthread/SDL_syscond.c
         src/thread/pthread/SDL_systhread.c
@@ -131,12 +134,14 @@ add_library( # Sets the name of the library.
         src/video/android/SDL_androidvideo.c
         src/video/android/SDL_androidmouse.c
         src/video/android/SDL_androidgl.c
+        src/video/android/SDL_androidvulkan.c
         src/video/SDL_blit_copy.c
         src/video/SDL_clipboard.c
         src/video/SDL_blit_auto.c
         src/video/SDL_rect.c
         src/video/SDL_shape.c
         src/video/SDL_surface.c
+        src/video/yuv2rgb/yuv_rgb.c
         src/loadso/dlopen/SDL_sysloadso.c
         src/dynapi/SDL_dynapi.c
         src/SDL_error.c
@@ -155,10 +160,19 @@ add_library( # Sets the name of the library.
         src/joystick/SDL_gamecontroller.c
         src/joystick/SDL_joystick.c
         src/joystick/android/SDL_sysjoystick.c
+        src/joystick/hidapi/SDL_hidapijoystick.c
+        src/joystick/hidapi/SDL_hidapi_ps4.c
+        src/joystick/hidapi/SDL_hidapi_switch.c
+        src/joystick/hidapi/SDL_hidapi_xbox360.c
+        src/joystick/hidapi/SDL_hidapi_xboxone.c
         src/filesystem/android/SDL_sysfilesystem.c
         src/SDL_log.c
         src/SDL_hints.c
-
+        src/SDL_dataqueue.c
+        src/sensor/SDL_sensor.c
+        src/video/SDL_vulkan_utils.c
+        src/hidapi/android/hid.cpp
+        src/sensor/android/SDL_androidsensor.c
        )
 
 

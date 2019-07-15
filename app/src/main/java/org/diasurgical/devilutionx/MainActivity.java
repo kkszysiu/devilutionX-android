@@ -1,4 +1,4 @@
-package org.kkszysiu.devilutionx;
+package org.diasurgical.devilutionx;
 
 import android.content.Intent;
 import android.os.Bundle;

@@ -1,4 +1,4 @@
-package org.kkszysiu.devilutionx;
+package org.diasurgical.devilutionx;
 
 import org.libsdl.app.SDLActivity;
 

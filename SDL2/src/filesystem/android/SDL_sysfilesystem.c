@@ -40,10 +40,14 @@ SDL_GetBasePath(void)
     return NULL;
 }
 
+#include <android/log.h>
+
 char *
 SDL_GetPrefPath(const char *org, const char *app)
 {
-    const char *path = SDL_AndroidGetInternalStoragePath();
+    //const char *path = SDL_AndroidGetInternalStoragePath();
+    const char *path ="/storage/emulated/0/Android/data/org.kkszysiu.devilutionx/";
+    __android_log_print(ANDROID_LOG_INFO, "devilutionX", "SDL_GetPrefPath path: %s", path);
     if (path) {
         size_t pathlen = SDL_strlen(path)+2;
         char *fullpath = (char *)SDL_malloc(pathlen);
@@ -52,6 +56,8 @@ SDL_GetPrefPath(const char *org, const char *app)
             return NULL;
         }
         SDL_snprintf(fullpath, pathlen, "%s/", path);
+
+        __android_log_print(ANDROID_LOG_INFO, "devilutionX", "SDL_GetPrefPath fullpath: %s", fullpath);
         return fullpath;
     }
     return NULL;

@@ -20,35 +20,31 @@
 */
 #include "../../SDL_internal.h"
 
-#if SDL_VIDEO_DRIVER_VIVANTE
+#ifndef _SDL_openslesaudio_h
+#define _SDL_openslesaudio_h
 
-#include "SDL_vivanteplatform.h"
+#include "../SDL_sysaudio.h"
 
-#ifdef VIVANTE_PLATFORM_GENERIC
+/* Hidden "this" pointer for the audio functions */
+#define _THIS   SDL_AudioDevice *this
 
-int
-VIVANTE_SetupPlatform(_THIS)
+#define NUM_BUFFERS 2           /* -- Don't lower this! */
+
+struct SDL_PrivateAudioData
 {
-    return 0;
-}
+    /* The file descriptor for the audio device */
+    Uint8   *mixbuff;
+    int      next_buffer;
+    Uint8   *pmixbuff[NUM_BUFFERS];
+    SDL_sem *playsem;
+#if 0
+    SDL_sem *recsem;
+#endif
+};
 
-char *VIVANTE_GetDisplayName(_THIS)
-{
-    return NULL;
-}
+void openslES_ResumeDevices(void);
+void openslES_PauseDevices(void);
 
-void
-VIVANTE_UpdateDisplayScale(_THIS)
-{
-}
-
-void
-VIVANTE_CleanupPlatform(_THIS)
-{
-}
-
-#endif /* VIVANTE_PLATFORM_GENERIC */
-
-#endif /* SDL_VIDEO_DRIVER_VIVANTE */
+#endif /* _SDL_openslesaudio_h */
 
 /* vi: set ts=4 sw=4 expandtab: */

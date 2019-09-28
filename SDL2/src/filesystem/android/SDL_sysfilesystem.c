@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2019 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -40,14 +40,10 @@ SDL_GetBasePath(void)
     return NULL;
 }
 
-#include <android/log.h>
-
 char *
 SDL_GetPrefPath(const char *org, const char *app)
 {
-    //const char *path = SDL_AndroidGetInternalStoragePath();
-    const char *path ="/sdcard/Android/data/org.diasurgical.devilutionx/";
-    __android_log_print(ANDROID_LOG_INFO, "devilutionX", "SDL_GetPrefPath path: %s", path);
+    const char *path = SDL_AndroidGetInternalStoragePath();
     if (path) {
         size_t pathlen = SDL_strlen(path)+2;
         char *fullpath = (char *)SDL_malloc(pathlen);
@@ -56,8 +52,6 @@ SDL_GetPrefPath(const char *org, const char *app)
             return NULL;
         }
         SDL_snprintf(fullpath, pathlen, "%s/", path);
-
-        __android_log_print(ANDROID_LOG_INFO, "devilutionX", "SDL_GetPrefPath fullpath: %s", fullpath);
         return fullpath;
     }
     return NULL;

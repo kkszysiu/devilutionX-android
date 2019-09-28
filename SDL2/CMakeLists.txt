@@ -13,25 +13,15 @@ project(SDL2)
 
 find_library( # Sets the name of the path variable.
         GLESv1_CM
-
-        # Specifies the name of the NDK library that
-        # you want CMake to locate.
-        GLESv1_CM )
-
-find_library(
         GLESv2
-        GLESv2
+        android
+        cpufeatures
+        log
+        OpenSLES
 )
 
-find_library(
-        android
-        android
-)
-
-find_library(
-        log
-        log
-)
+include(AndroidNdkModules)
+android_ndk_import_module_cpufeatures()
 
 include_directories(include)
 
@@ -42,8 +32,6 @@ add_library( # Sets the name of the library.
 
         # Sets the library as a shared library.
         SHARED
-
-
 
         # Provides a relative path to your source file(s).
         src/render/opengles/SDL_render_gles.c
@@ -72,6 +60,7 @@ add_library( # Sets the name of the library.
         src/audio/paudio/SDL_paudio.c
         src/audio/SDL_audiotypecvt.c
         src/audio/SDL_audio.c
+        src/audio/openslES/SDL_openslES.c
         src/core/android/SDL_android.c
         src/haptic/android/SDL_syshaptic.c
         src/cpuinfo/SDL_cpuinfo.c
@@ -192,6 +181,8 @@ target_link_libraries( # Specifies the target library.
         SDL2
         GLESv1_CM
         GLESv2
+        cpufeatures
+        OpenSLES
         android
         log
         # Links the target library to the log library

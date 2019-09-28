@@ -12,7 +12,7 @@ model {
         }
         ndk {
             moduleName = 'SDL2'
-            ldLibs.addAll(["GLESv1_CM", "EGL", "GLESv2", "log", "android", "dl"])
+            ldLibs.addAll(["GLESv1_CM", "EGL", "GLESv2", "log", "cpufeatures", "android", "dl"])
             CFlags.addAll(["-DGL_GLEXT_PROTOTYPES"])
             CFlags.addAll(["-I" + file("include/").absolutePath,"-DGL_GLEXT_PROTOTYPES"])
         }

@@ -1,6 +1,6 @@
 /*
   SDL_mixer:  An audio mixer library based on the SDL library
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -17,14 +17,12 @@
   2. Altered source versions must be plainly marked as such, and must not be
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
-
-  This is the source needed to decode an MP3 into a waveform.
 */
 
-/* $Id$ */
+/* This file supports playing MIDI files with OS APIs */
 
-#if defined(MP3_MUSIC) || defined(MP3_MAD_MUSIC)
-/* Don't call this directly; use Mix_LoadWAV_RW() for now. */
-SDL_AudioSpec *Mix_LoadMP3_RW (SDL_RWops *src, int freesrc,
-        SDL_AudioSpec *spec, Uint8 **audio_buf, Uint32 *audio_len);
-#endif
+#include "music.h"
+
+extern Mix_MusicInterface Mix_MusicInterface_NATIVEMIDI;
+
+/* vi: set ts=4 sw=4 expandtab: */

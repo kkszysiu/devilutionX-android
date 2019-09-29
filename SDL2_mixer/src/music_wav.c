@@ -1,6 +1,6 @@
 /*
   SDL_mixer:  An audio mixer library based on the SDL library
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -19,20 +19,34 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-/* $Id$ */
+#ifdef MUSIC_WAV
 
-/* This file supports streaming WAV files, without volume adjustment */
+/* This file supports streaming WAV files */
 
-#include <stdlib.h>
-#include <string.h>
+#include "music_wav.h"
 
-#include "SDL_audio.h"
-#include "SDL_mutex.h"
-#include "SDL_rwops.h"
-#include "SDL_endian.h"
 
-#include "SDL_mixer.h"
-#include "wavestream.h"
+typedef struct {
+    SDL_bool active;
+    Uint32 start;
+    Uint32 stop;
+    Uint32 initial_play_count;
+    Uint32 current_play_count;
+} WAVLoopPoint;
+
+typedef struct {
+    SDL_RWops *src;
+    SDL_bool freesrc;
+    SDL_AudioSpec spec;
+    int volume;
+    int play_count;
+    Sint64 start;
+    Sint64 stop;
+    Uint8 *buffer;
+    SDL_AudioStream *stream;
+    int numloops;
+    WAVLoopPoint *loops;
+} WAV_Music;
 
 /*
     Taken with permission from SDL_wave.h, part of the SDL library,
@@ -91,7 +105,7 @@ typedef struct {
     Uint32  SMTPE_offset;
     Uint32  sample_loops;
     Uint32  sampler_data;
-    SampleLoop loops[];
+    SampleLoop loops[1];
 } SamplerChunk;
 
 /*********************************************/
@@ -103,94 +117,101 @@ typedef struct {
 #define COMM        0x4d4d4f43      /* "COMM" */
 
 
-/* Currently we only support a single stream at a time */
-static WAVStream *music = NULL;
-
-/* This is the format of the audio mixer data */
-static SDL_AudioSpec mixer;
-static int wavestream_volume = MIX_MAX_VOLUME;
-
 /* Function to load the WAV/AIFF stream */
-static SDL_bool LoadWAVStream(WAVStream *wave);
-static SDL_bool LoadAIFFStream(WAVStream *wave);
+static SDL_bool LoadWAVMusic(WAV_Music *wave);
+static SDL_bool LoadAIFFMusic(WAV_Music *wave);
 
-/* Initialize the WAVStream player, with the given mixer settings
-   This function returns 0, or -1 if there was an error.
- */
-int WAVStream_Init(SDL_AudioSpec *mixerfmt)
-{
-    mixer = *mixerfmt;
-    return(0);
-}
-
-void WAVStream_SetVolume(int volume)
-{
-    wavestream_volume = volume;
-}
+static void WAV_Delete(void *context);
 
 /* Load a WAV stream from the given RWops object */
-WAVStream *WAVStream_LoadSong_RW(SDL_RWops *src, int freesrc)
+static void *WAV_CreateFromRW(SDL_RWops *src, int freesrc)
 {
-    WAVStream *wave;
+    WAV_Music *music;
+    Uint32 magic;
     SDL_bool loaded = SDL_FALSE;
 
-    if (!mixer.format) {
-        Mix_SetError("WAV music output not started");
-        return(NULL);
-    }
-
-    wave = (WAVStream *)SDL_malloc(sizeof *wave);
-    if (wave) {
-        Uint32 magic;
-
-        SDL_zerop(wave);
-        wave->src = src;
-        wave->freesrc = freesrc;
-
-        magic = SDL_ReadLE32(src);
-        if (magic == RIFF || magic == WAVE) {
-            loaded = LoadWAVStream(wave);
-        } else if (magic == FORM) {
-            loaded = LoadAIFFStream(wave);
-        } else {
-            Mix_SetError("Unknown WAVE format");
-        }
-        if (!loaded) {
-            WAVStream_FreeSong(wave);
-            return(NULL);
-        }
-        SDL_BuildAudioCVT(&wave->cvt,
-            wave->spec.format, wave->spec.channels, wave->spec.freq,
-            mixer.format, mixer.channels, mixer.freq);
-    } else {
+    music = (WAV_Music *)SDL_calloc(1, sizeof(*music));
+    if (!music) {
         SDL_OutOfMemory();
-        return(NULL);
+        return NULL;
     }
-    return(wave);
+    music->src = src;
+    music->volume = MIX_MAX_VOLUME;
+
+    magic = SDL_ReadLE32(src);
+    if (magic == RIFF || magic == WAVE) {
+        loaded = LoadWAVMusic(music);
+    } else if (magic == FORM) {
+        loaded = LoadAIFFMusic(music);
+    } else {
+        Mix_SetError("Unknown WAVE format");
+    }
+    if (!loaded) {
+        SDL_free(music);
+        return NULL;
+    }
+    music->buffer = (Uint8*)SDL_malloc(music->spec.size);
+    if (!music->buffer) {
+        WAV_Delete(music);
+        return NULL;
+    }
+    music->stream = SDL_NewAudioStream(
+        music->spec.format, music->spec.channels, music->spec.freq,
+        music_spec.format, music_spec.channels, music_spec.freq);
+    if (!music->stream) {
+        WAV_Delete(music);
+        return NULL;
+    }
+
+    music->freesrc = freesrc;
+    return music;
+}
+
+static void WAV_SetVolume(void *context, int volume)
+{
+    WAV_Music *music = (WAV_Music *)context;
+    music->volume = volume;
 }
 
 /* Start playback of a given WAV stream */
-void WAVStream_Start(WAVStream *wave)
+static int WAV_Play(void *context, int play_count)
 {
+    WAV_Music *music = (WAV_Music *)context;
     int i;
-    for (i = 0; i < wave->numloops; ++i) {
-        WAVLoopPoint *loop = &wave->loops[i];
+    for (i = 0; i < music->numloops; ++i) {
+        WAVLoopPoint *loop = &music->loops[i];
         loop->active = SDL_TRUE;
         loop->current_play_count = loop->initial_play_count;
     }
-    SDL_RWseek(wave->src, wave->start, RW_SEEK_SET);
-    music = wave;
+    music->play_count = play_count;
+    if (SDL_RWseek(music->src, music->start, RW_SEEK_SET) < 0) {
+        return -1;
+    }
+    return 0;
 }
 
-/* Play some of a stream previously started with WAVStream_Start() */
-static int PlaySome(Uint8 *stream, int len)
+/* Play some of a stream previously started with WAV_Play() */
+static int WAV_GetSome(void *context, void *data, int bytes, SDL_bool *done)
 {
+    WAV_Music *music = (WAV_Music *)context;
     Sint64 pos, stop;
     WAVLoopPoint *loop;
     Sint64 loop_start;
     Sint64 loop_stop;
+    SDL_bool looped = SDL_FALSE;
     int i;
-    int consumed;
+    int filled, amount, result;
+
+    filled = SDL_AudioStreamGet(music->stream, data, bytes);
+    if (filled != 0) {
+        return filled;
+    }
+
+    if (!music->play_count) {
+        /* All done */
+        *done = SDL_TRUE;
+        return 0;
+    }
 
     pos = SDL_RWtell(music->src);
     stop = music->stop;
@@ -210,51 +231,18 @@ static int PlaySome(Uint8 *stream, int len)
         loop = NULL;
     }
 
-    if (music->cvt.needed) {
-        int original_len;
-
-        original_len = (int)((double)len/music->cvt.len_ratio);
-        if (music->cvt.len != original_len) {
-            int worksize;
-            if (music->cvt.buf != NULL) {
-                SDL_free(music->cvt.buf);
-            }
-            worksize = original_len*music->cvt.len_mult;
-            music->cvt.buf=(Uint8 *)SDL_malloc(worksize);
-            if (music->cvt.buf == NULL) {
-                return 0;
-            }
-            music->cvt.len = original_len;
+    amount = music->spec.size;
+    if ((stop - pos) < amount) {
+        amount = (int)(stop - pos);
+    }
+    amount = (int)SDL_RWread(music->src, music->buffer, 1, amount);
+    if (amount > 0) {
+        result = SDL_AudioStreamPut(music->stream, music->buffer, amount);
+        if (result < 0) {
+            return -1;
         }
-        if ((stop - pos) < original_len) {
-            original_len = (int)(stop - pos);
-        }
-        original_len = SDL_RWread(music->src, music->cvt.buf, 1, original_len);
-        /* At least at the time of writing, SDL_ConvertAudio()
-           does byte-order swapping starting at the end of the
-           buffer. Thus, if we are reading 16-bit samples, we
-           had better make damn sure that we get an even
-           number of bytes, or we'll get garbage.
-         */
-        if ((music->cvt.src_format & 0x0010) && (original_len & 1)) {
-            original_len--;
-        }
-        music->cvt.len = original_len;
-        SDL_ConvertAudio(&music->cvt);
-        SDL_MixAudio(stream, music->cvt.buf, music->cvt.len_cvt, wavestream_volume);
-        consumed = music->cvt.len_cvt;
     } else {
-        Uint8 *data;
-        if ((stop - pos) < len) {
-            len = (int)(stop - pos);
-        }
-        data = SDL_stack_alloc(Uint8, len);
-        if (data) {
-            len = SDL_RWread(music->src, data, 1, len);
-            SDL_MixAudio(stream, data, len, wavestream_volume);
-            SDL_stack_free(data);
-        }
-        consumed = len;
+        /* We might be looping, continue */
     }
 
     if (loop && SDL_RWtell(music->src) >= stop) {
@@ -265,66 +253,58 @@ static int PlaySome(Uint8 *stream, int len)
                 --loop->current_play_count;
             }
             SDL_RWseek(music->src, loop_start, RW_SEEK_SET);
+            looped = SDL_TRUE;
         }
     }
-    return consumed;
-}
 
-int WAVStream_PlaySome(Uint8 *stream, int len)
-{
-    if (!music)
-        return 0;
-
-    while ((SDL_RWtell(music->src) < music->stop) && (len > 0)) {
-        int consumed = PlaySome(stream, len);
-        if (!consumed)
-            break;
-
-        stream += consumed;
-        len -= consumed;
+    if (!looped && SDL_RWtell(music->src) >= music->stop) {
+        if (music->play_count == 1) {
+            music->play_count = 0;
+            SDL_AudioStreamFlush(music->stream);
+        } else {
+            int play_count = -1;
+            if (music->play_count > 0) {
+                play_count = (music->play_count - 1);
+            }
+            if (WAV_Play(music, play_count) < 0) {
+                return -1;
+            }
+        }
     }
-    return len;
+
+    /* We'll get called again in the case where we looped or have more data */
+    return 0;
 }
 
-/* Stop playback of a stream previously started with WAVStream_Start() */
-void WAVStream_Stop(void)
+static int WAV_GetAudio(void *context, void *data, int bytes)
 {
-    music = NULL;
+    WAV_Music *music = (WAV_Music *)context;
+    return music_pcm_getaudio(context, data, bytes, music->volume, WAV_GetSome);
 }
 
 /* Close the given WAV stream */
-void WAVStream_FreeSong(WAVStream *wave)
+static void WAV_Delete(void *context)
 {
-    if (wave) {
-        /* Clean up associated data */
-        if (wave->loops) {
-            SDL_free(wave->loops);
-        }
-        if (wave->cvt.buf) {
-            SDL_free(wave->cvt.buf);
-        }
-        if (wave->freesrc) {
-            SDL_RWclose(wave->src);
-        }
-        SDL_free(wave);
+    WAV_Music *music = (WAV_Music *)context;
+
+    /* Clean up associated data */
+    if (music->loops) {
+        SDL_free(music->loops);
     }
+    if (music->stream) {
+        SDL_FreeAudioStream(music->stream);
+    }
+    if (music->buffer) {
+        SDL_free(music->buffer);
+    }
+    if (music->freesrc) {
+        SDL_RWclose(music->src);
+    }
+    SDL_free(music);
 }
 
-/* Return non-zero if a stream is currently playing */
-int WAVStream_Active(void)
+static SDL_bool ParseFMT(WAV_Music *wave, Uint32 chunk_length)
 {
-    int active;
-
-    active = 0;
-    if (music && (SDL_RWtell(music->src) < music->stop)) {
-        active = 1;
-    }
-    return(active);
-}
-
-static SDL_bool ParseFMT(WAVStream *wave, Uint32 chunk_length)
-{
-    SDL_RWops *src = wave->src;
     SDL_AudioSpec *spec = &wave->spec;
     WaveFMT *format;
     Uint8 *data;
@@ -369,6 +349,10 @@ static SDL_bool ParseFMT(WAVStream *wave, Uint32 chunk_length)
     }
     spec->channels = (Uint8) SDL_SwapLE16(format->channels);
     spec->samples = 4096;       /* Good default buffer size */
+    /* SDL_CalculateAudioSpec */
+    spec->size = SDL_AUDIO_BITSIZE(spec->format) / 8;
+    spec->size *= spec->channels;
+    spec->size *= spec->samples;
 
     loaded = SDL_TRUE;
 
@@ -377,7 +361,7 @@ done:
     return loaded;
 }
 
-static SDL_bool ParseDATA(WAVStream *wave, Uint32 chunk_length)
+static SDL_bool ParseDATA(WAV_Music *wave, Uint32 chunk_length)
 {
     wave->start = SDL_RWtell(wave->src);
     wave->stop = wave->start + chunk_length;
@@ -385,7 +369,7 @@ static SDL_bool ParseDATA(WAVStream *wave, Uint32 chunk_length)
     return SDL_TRUE;
 }
 
-static SDL_bool AddLoopPoint(WAVStream *wave, Uint32 play_count, Uint32 start, Uint32 stop)
+static SDL_bool AddLoopPoint(WAV_Music *wave, Uint32 play_count, Uint32 start, Uint32 stop)
 {
     WAVLoopPoint *loop;
     WAVLoopPoint *loops = SDL_realloc(wave->loops, (wave->numloops + 1)*sizeof(*wave->loops));
@@ -405,11 +389,11 @@ static SDL_bool AddLoopPoint(WAVStream *wave, Uint32 play_count, Uint32 start, U
     return SDL_TRUE;
 }
 
-static SDL_bool ParseSMPL(WAVStream *wave, Uint32 chunk_length)
+static SDL_bool ParseSMPL(WAV_Music *wave, Uint32 chunk_length)
 {
     SamplerChunk *chunk;
     Uint8 *data;
-    int i;
+    Uint32 i;
     SDL_bool loaded = SDL_FALSE;
 
     data = (Uint8 *)SDL_malloc(chunk_length);
@@ -432,13 +416,11 @@ static SDL_bool ParseSMPL(WAVStream *wave, Uint32 chunk_length)
     }
 
     loaded = SDL_TRUE;
-
-done:
     SDL_free(data);
     return loaded;
 }
 
-static SDL_bool LoadWAVStream(WAVStream *wave)
+static SDL_bool LoadWAVMusic(WAV_Music *wave)
 {
     SDL_RWops *src = wave->src;
     Uint32 chunk_type;
@@ -523,7 +505,7 @@ static Uint32 SANE_to_Uint32 (Uint8 *sanebuf)
             (sanebuf[5] >> 1)) >> (29 - sanebuf[1]);
 }
 
-static SDL_bool LoadAIFFStream(WAVStream *wave)
+static SDL_bool LoadAIFFMusic(WAV_Music *wave)
 {
     SDL_RWops *src = wave->src;
     SDL_AudioSpec *spec = &wave->spec;
@@ -626,3 +608,31 @@ static SDL_bool LoadAIFFStream(WAVStream *wave)
     return SDL_TRUE;
 }
 
+Mix_MusicInterface Mix_MusicInterface_WAV =
+{
+    "WAVE",
+    MIX_MUSIC_WAVE,
+    MUS_WAV,
+    SDL_FALSE,
+    SDL_FALSE,
+
+    NULL,   /* Load */
+    NULL,   /* Open */
+    WAV_CreateFromRW,
+    NULL,   /* CreateFromFile */
+    WAV_SetVolume,
+    WAV_Play,
+    NULL,   /* IsPlaying */
+    WAV_GetAudio,
+    NULL,   /* Seek */
+    NULL,   /* Pause */
+    NULL,   /* Resume */
+    NULL,   /* Stop */
+    WAV_Delete,
+    NULL,   /* Close */
+    NULL,   /* Unload */
+};
+
+#endif /* MUSIC_WAV */
+
+/* vi: set ts=4 sw=4 expandtab: */

@@ -5,35 +5,19 @@ project(SDL2_mixer)
 
 find_library( # Sets the name of the path variable.
         GLESv1_CM
-
-        GLESv1_CM )
-
-find_library(
         GLESv2
-        GLESv2
-)
-
-find_library(
         android
-        android
-)
-
-find_library(
         z
-        z
-)
-
-find_library(
-        log
         log
 )
 
 include_directories(
         include
+        src/native_midi
         ${CMAKE_CURRENT_SOURCE_DIR}/../SDL2/include
 )
 
-add_definitions(-DGL_GLEXT_PROTOTYPES)
+add_definitions(-DGL_GLEXT_PROTOTYPES -DMUSIC_WAV)
 
 add_library( # Sets the name of the library.
         SDL2_mixer
@@ -41,31 +25,27 @@ add_library( # Sets the name of the library.
         # Sets the library as a shared library.
         SHARED
 
-        src/music_mad.c
-        src/dynamic_flac.c
+        src/effect_position.c
+        src/effect_stereoreverse.c
+        src/effects_internal.c
         src/load_aiff.c
         src/load_voc.c
-        src/dynamic_ogg.c
-        src/load_mp3.c
         src/mixer.c
-        src/playmus.c
-        src/music_ogg.c
-        src/music_cmd.c
-        src/music_mod.c
-        src/load_flac.c
-        src/dynamic_fluidsynth.c
-        src/fluidsynth.c
-        src/effect_stereoreverse.c
         src/music.c
-        src/dynamic_mod.c
-        src/effects_internal.c
-        src/dynamic_modplug.c
-        src/dynamic_mp3.c
-        src/load_ogg.c
-        src/wavestream.c
-        src/effect_position.c
-        src/music_modplug.c
+        src/music_cmd.c
         src/music_flac.c
+        src/music_fluidsynth.c
+        src/music_mad.c
+        src/music_mikmod.c
+        src/music_modplug.c
+        src/music_mpg123.c
+        src/music_nativemidi.c
+        src/music_ogg.c
+        src/music_opus.c
+        src/music_wav.c
+        #src/playmus.c
+        #src/playwave.c
+        src/native_midi/native_midi_common.c
         )
 
 

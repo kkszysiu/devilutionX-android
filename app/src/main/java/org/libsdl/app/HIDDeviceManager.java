@@ -103,6 +103,36 @@ public class HIDDeviceManager {
 
     private HIDDeviceManager(final Context context) {
         mContext = context;
+
+//        // Make sure we have the HIDAPI library loaded with the native functions
+//        try {
+//            SDL.loadLibrary("hidapi");
+//        } catch (Throwable e) {
+//            Log.w(TAG, "Couldn't load hidapi: " + e.toString());
+//
+//            AlertDialog.Builder builder = new AlertDialog.Builder(context);
+//            builder.setCancelable(false);
+//            builder.setTitle("SDL HIDAPI Error");
+//            builder.setMessage("Please report the following error to the SDL maintainers: " + e.getMessage());
+//            builder.setNegativeButton("Quit", new DialogInterface.OnClickListener() {
+//                @Override
+//                public void onClick(DialogInterface dialog, int which) {
+//                    try {
+//                        // If our context is an activity, exit rather than crashing when we can't
+//                        // call our native functions.
+//                        Activity activity = (Activity)context;
+//
+//                        activity.finish();
+//                    }
+//                    catch (ClassCastException cce) {
+//                        // Context wasn't an activity, there's nothing we can do.  Give up and return.
+//                    }
+//                }
+//            });
+//            builder.show();
+//
+//            return;
+//        }
         
         HIDDeviceRegisterCallback();
 
@@ -381,7 +411,7 @@ public class HIDDeviceManager {
 
         if (mIsChromebook) {
             mHandler = new Handler(Looper.getMainLooper());
-            mLastBluetoothDevices = new ArrayList<>();
+            mLastBluetoothDevices = new ArrayList<BluetoothDevice>();
 
             // final HIDDeviceManager finalThis = this;
             // mHandler.postDelayed(new Runnable() {
@@ -409,8 +439,8 @@ public class HIDDeviceManager {
             return;
         }
 
-        ArrayList<BluetoothDevice> disconnected = new ArrayList<>();
-        ArrayList<BluetoothDevice> connected = new ArrayList<>();
+        ArrayList<BluetoothDevice> disconnected = new ArrayList<BluetoothDevice>();
+        ArrayList<BluetoothDevice> connected = new ArrayList<BluetoothDevice>();
 
         List<BluetoothDevice> currentConnected = mBluetoothManager.getConnectedDevices(BluetoothProfile.GATT);
 
